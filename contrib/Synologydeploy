@@ -1,0 +1,149 @@
+###################################################################################
+#   Shell script for starting AIRSONIC.
+###################################################################################
+
+
+AIRSONIC_HOME=/volume1/airsonic
+AIRSONIC_HOST=0.0.0.0
+AIRSONIC_PORT=4040
+AIRSONIC_HTTPS_PORT=
+AIRSONIC_CONTEXT_PATH=/
+AIRSONIC_INIT_MEMORY=256
+AIRSONIC_MAX_MEMORY=512
+AIRSONIC_DEFAULT_MUSIC_FOLDER=/volume1/music
+AIRSONIC_DEFAULT_UPLOAD_FOLDER=/volume1/music/incoming
+AIRSONIC_DEFAULT_PODCAST_FOLDER=/volume1/music/1.Podcasts
+AIRSONIC_DEFAULT_PLAYLIST_IMPORT_FOLDER=/volume1/music/0.Playlists/import
+AIRSONIC_DEFAULT_PLAYLIST_EXPORT_FOLDER=/volume1/music/0.Playlists/export
+AIRSONIC_DEFAULT_PLAYLIST_BACKUP_FOLDER=/volume1/music/0.Playlists/backup
+AIRSONIC_DEFAULT_TRANSCODE_FOLDER=/volume1/airsonic/transcode
+AIRSONIC_DEFAULT_TIMEZONE=
+AIRSONIC_PIDFILE=
+AIRSONIC_UPDATE=true
+AIRSONIC_GZIP=
+AIRSONIC_DB=
+
+### UTF-8 Support
+### export LANG="en_US.UTF-8" LANG="ja_JP.UTF-8"
+### export LC_CTYPE="en_US.UTF-8"
+export LANG="en_US.UTF-8"
+export LC_CTYPE="en_US.UTF-8"
+export LC_ALL="en_US.UTF-8"
+export LC_MESSAGE="en_US.UTF-8" 
+
+quiet=0
+
+# Parse arguments.
+while [ $# -ge 1 ]; do
+    case $1 in
+        --home=?*)
+            AIRSONIC_HOME=${1#--home=}
+            ;;
+        --server=?*)
+            AIRSONIC_HOST=${1#--server=}
+            ;;
+        --port=?*)
+            AIRSONIC_PORT=${1#--port=}
+            ;;
+        --https-port=?*)
+            AIRSONIC_HTTPS_PORT=${1#--https-port=}
+            ;;
+        --context-path=?*)
+            AIRSONIC_CONTEXT_PATH=${1#--context-path=}
+            ;;
+        --init-memory=?*)
+            AIRSONIC_INIT_MEMORY=${1#--init-memory=}
+            ;;
+        --max-memory=?*)
+            AIRSONIC_MAX_MEMORY=${1#--max-memory=}
+            ;;
+        --pidfile=?*)
+            AIRSONIC_PIDFILE=${1#--pidfile=}
+            ;;
+        --default-music-folder=?*)
+            AIRSONIC_DEFAULT_MUSIC_FOLDER=${1#--default-music-folder=}
+            ;;
+        --default-upload-folder=?*)
+            AIRSONIC_DEFAULT_UPLOAD_FOLDER=${1#--default-upload-folder=}
+            ;;
+        --default-podcast-folder=?*)
+            AIRSONIC_DEFAULT_PODCAST_FOLDER=${1#--default-podcast-folder=}
+            ;;
+        --default-playlist-import-folder=?*)
+            AIRSONIC_DEFAULT_PLAYLIST_IMPORT_FOLDER=${1#--default-playlist-import-folder=}
+            ;;
+        --default-playlist-export-folder=?*)
+            AIRSONIC_DEFAULT_PLAYLIST_EXPORT_FOLDER=${1#--default-playlist-export-folder=}
+            ;;
+        --default-playlist-backup-folder=?*)
+            AIRSONIC_DEFAULT_PLAYLIST_BACKUP_FOLDER=${1#--default-playlist-backup-folder=}
+            ;;
+        --default-transcode-folder=?*)
+            AIRSONIC_DEFAULT_TRANSCODE_FOLDER=${1#--default-transcode-folder=}
+            ;;
+        --timezone=?*)
+           AIRSONIC_DEFAULT_TIMEZONE=${1#--timezone=}
+           ;;
+        --update=?*)
+           AIRSONIC_UPDATE=${1#--update=}
+           ;;           
+        --gzip=?*)
+           AIRSONIC_GZIP=${1#--gzip=}
+           ;;
+        --db=?*)
+            AIRSONIC_DB=${1#--db=}
+           ;;
+        --quiet)
+            quiet=1
+            ;;
+        *)
+            usage
+            ;;
+    esac
+    shift
+done
+
+# Use JAVA_HOME if set, otherwise assume java is in the path.
+JAVA=/var/packages/Java8/target/j2sdk-image/bin/java
+if [ -e "${JAVA_HOME}" ]
+    then
+    JAVA=${JAVA_HOME}/bin/java
+fi
+
+# Create AIRSONIC home directory.
+LOG=${AIRSONIC_HOME}/AIRSONIC_sh.log
+rm -f ${LOG}
+
+cd $(dirname $0)
+if [ -L $0 ] && ([ -e /bin/readlink ] || [ -e /usr/bin/readlink ]); then
+    cd $(dirname $(readlink $0))
+fi
+
+${JAVA} -Xms${AIRSONIC_INIT_MEMORY}m -Xmx${AIRSONIC_MAX_MEMORY}m \
+  -Dairsonic.home=${AIRSONIC_HOME} \
+  -Dserver.adress=${AIRSONIC_HOST} \
+  -Dserver.port=${AIRSONIC_PORT} \
+  -Dserver.httpsPort=${AIRSONIC_HTTPS_PORT} \
+  -Dserver.contextPath=${AIRSONIC_CONTEXT_PATH} \
+  -Dairsonic.defaultMusicFolder=${AIRSONIC_DEFAULT_MUSIC_FOLDER} \
+  -Dairsonic.defaultUploadFolder=${AIRSONIC_DEFAULT_UPLOAD_FOLDER} \
+  -Dairsonic.defaultPodcastFolder=${AIRSONIC_DEFAULT_PODCAST_FOLDER} \
+  -Dairsonic.defaultPlaylistImportFolder=${AIRSONIC_DEFAULT_PLAYLIST_IMPORT_FOLDER} \
+  -Dairsonic.defaultPlaylistExportFolder=${AIRSONIC_DEFAULT_PLAYLIST_EXPORT_FOLDER} \
+  -Dairsonic.defaultPlaylistBackupFolder=${AIRSONIC_DEFAULT_PLAYLIST_BACKUP_FOLDER} \
+  -Dairsonic.defaultTranscodeFolder=${AIRSONIC_DEFAULT_TRANSCODE_FOLDER} \
+  -Duser.timezone=${AIRSONIC_DEFAULT_TIMEZONE} \
+  -Dairsonic.update=${AIRSONIC_UPDATE} \
+  -Dairsonic.gzip=${AIRSONIC_GZIP} \
+  -Dairsonic.db="${AIRSONIC_DB}" \
+  -Djava.awt.headless=true \
+  -jar airsonic.war > ${LOG} 2>&1 &
+
+# Write pid to pidfile if it is defined.
+if [ $AIRSONIC_PIDFILE ]; then
+    echo $! > ${AIRSONIC_PIDFILE}
+fi
+
+if [ $quiet = 0 ]; then
+    echo Started AIRSONIC [PID $!, ${LOG}]
+fi

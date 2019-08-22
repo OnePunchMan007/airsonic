@@ -69,7 +69,7 @@ public class SonosServiceRegistration {
             params.add(Pair.create("caps", "extendedMD"));
             params.add(Pair.create("presentationMapVersion", "1"));
             params.add(Pair.create("presentationMapUri", airsonicBaseUrl + "sonos/presentationMap.xml"));
-            params.add(Pair.create("stringsVersion", "5"));
+            params.add(Pair.create("stringsVersion", "6"));
             params.add(Pair.create("stringsUri", airsonicBaseUrl + "sonos/strings.xml"));
         }
 
